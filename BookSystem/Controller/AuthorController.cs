@@ -38,8 +38,14 @@ namespace BookSystem.Controller {
         }
 
         [HttpPut("UpdateAuthor/{id}")]
-        public async Task<ActionResult<ResponseModel<AuthorModel>>> UpdateAuthor(Guid id, AuthorUpdateDTO_ dto) {
+        public async Task<ActionResult<ResponseModel<AuthorModel>>> UpdateAuthor(Guid id, AuthorUpdateDTO dto) {
             var author = await _authorInterface.UpdateAuthor(id, dto);
+            return Ok(author);
+        }
+
+        [HttpDelete("DeleteAuthor/{id}")]
+        public async Task<ActionResult<ResponseModel<AuthorModel>>> DeleteAuthor(Guid id) {
+            var author = await _authorInterface.DeleteAuthor(id);
             return Ok(author);
         }
     }

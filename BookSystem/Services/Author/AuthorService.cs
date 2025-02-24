@@ -18,7 +18,7 @@ namespace BookSystem.Services.Author {
                 var author = await _context.Books
                                         .Where(b => b.Id == idBook)
                                         .Select(b => b.Author)
-                                        .FirstOrDefaultAsync();
+                                        .FirstOrDefaultAsync(a => a.IsActive);
 
                 response.Data = author;
                 if (author == null) {
@@ -38,7 +38,9 @@ namespace BookSystem.Services.Author {
         public async Task<ResponseModel<AuthorModel>> GetAuthorById(Guid idAuthor) {
             var response = new ResponseModel<AuthorModel>();
             try {
-                var author = await _context.Authors.FirstOrDefaultAsync(a => a.Id == idAuthor);
+                var author = await _context.Authors
+                    .Where(a => a.IsActive)
+                    .FirstOrDefaultAsync(a => a.Id == idAuthor);
                 
                 response.Data = author;
                 if (author == null) {
@@ -58,7 +60,9 @@ namespace BookSystem.Services.Author {
         public async Task<ResponseModel<List<AuthorModel>>> GetAuthors() {
             var response = new ResponseModel<List<AuthorModel>>();
             try {
-                var authors = await _context.Authors.ToListAsync();
+                var authors = await _context.Authors
+                    .Where(a => a.IsActive)
+                    .ToListAsync();
                 response.Data = authors;
                 response.Message = "All authors have been collected.";
 
@@ -94,18 +98,25 @@ namespace BookSystem.Services.Author {
         public async Task<ResponseModel<AuthorModel>> UpdateAuthor(Guid id, AuthorUpdateDTO dto) {
             var response = new ResponseModel<AuthorModel>();
             try {
-                var author = await _context.Authors.FirstOrDefaultAsync(a => a.Id == id);
+                var author = await _context.Authors
+                    .Where(a => a.IsActive)
+                    .FirstOrDefaultAsync(a => a.Id == id);
 
                 if (author == null) {
                     response.Message = "No author found!";
                     return response;
                 }
 
-                if (dto.FirstName == null || dto.FirstName == "")
-                    author.LastName = dto.LastName;
+                if (string.IsNullOrEmpty(dto.FirstName) && string.IsNullOrEmpty(dto.LastName)) {
+                    response.Message = "Nothing to update!";
+                    return response;
+                }
 
-                if (dto.LastName == null || dto.LastName == "")
+                if (!string.IsNullOrEmpty(dto.FirstName))
                     author.FirstName = dto.FirstName;
+
+                if(!string.IsNullOrEmpty(dto.LastName))
+                    author.LastName = dto.LastName;
 
                 _context.Update(author);
                 await _context.SaveChangesAsync();
@@ -120,8 +131,31 @@ namespace BookSystem.Services.Author {
             }
         }
 
-        public Task<ResponseModel<AuthorModel>> DeleteAuthor(Guid id) {
-            throw new NotImplementedException();
+        public async Task<ResponseModel<AuthorModel>> DeleteAuthor(Guid id) {
+            var response = new ResponseModel<AuthorModel>();
+            try {
+                var author = await _context.Authors
+                    .Where(a => a.IsActive)
+                    .FirstOrDefaultAsync(a => a.Id == id);
+
+                if (author == null) {
+                    response.Message = "No author found!";
+                    return response;
+                }
+
+                author.IsActive = false;
+                _context.Update(author);
+                await _context.SaveChangesAsync();
+
+                response.Data = author;
+                response.Message = "Author deleted!";
+                return response;
+
+            } catch (Exception e) {
+                response.Message = e.Message;
+                response.Status = false;
+                return response;
+            }
         }
     }
 }

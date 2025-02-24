@@ -7,7 +7,7 @@ namespace BookSystem.Services.Author {
         Task<ResponseModel<AuthorModel>> GetAuthorById(Guid idAuthor);
         Task<ResponseModel<AuthorModel>> GetAuthorByBookId(Guid idBook);
         Task<ResponseModel<AuthorModel>> CreateAuthor(AuthorCreateDTO dto);
-        Task<ResponseModel<AuthorModel>> UpdateAuthor(Guid id, AuthorUpdateDTO_ dto);
+        Task<ResponseModel<AuthorModel>> UpdateAuthor(Guid id, AuthorUpdateDTO dto);
         Task<ResponseModel<AuthorModel>> DeleteAuthor(Guid id);
     }
 }

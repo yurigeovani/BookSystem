@@ -12,10 +12,10 @@ namespace BookSystem.Models {
         [JsonIgnore]
         public ICollection<BookModel>? Books { get; set; }
 
-        //public AuthorModel() {
-        //    Id = Guid.NewGuid();
-        //    IsActive = true;
-        //    CreatedAt = DateTime.UtcNow;
-        //}
+        public AuthorModel() {
+            Id = Guid.NewGuid();
+            IsActive = true;
+            CreatedAt = DateTime.UtcNow;
+        }
     }
 }
