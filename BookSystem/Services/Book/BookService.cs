@@ -68,10 +68,6 @@ namespace BookSystem.Services.Book {
                     .Include(b => b.Author)
                     .FirstOrDefaultAsync(b => b.Id == idBook);
 
-                //var author = await _context.Authors
-                //    .Where(a => a.IsActive)
-                //    .FirstOrDefaultAsync(a => a.Id == book.Author.Id);
-
                 if (book == null){
                     response.Message = "No book found!";
                     return response;
