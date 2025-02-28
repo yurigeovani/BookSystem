@@ -1,3 +1,8 @@
 ﻿namespace BookSystem.DTO {
-    public record AuthorResponseDTO(Guid id, string firstName, string lastName, DateTime createdAt);
+    public class AuthorResponseDTO {
+        public Guid? Id { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
 }

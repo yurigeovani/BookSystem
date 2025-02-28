@@ -3,11 +3,11 @@ using BookSystem.Models;
 
 namespace BookSystem.Services.Book {
     public interface IBookInterface {
-        Task<ResponseModel<List<BookModel>>> GetBooks();
-        Task<ResponseModel<BookModel>> GetBookById(Guid idBook);
-        Task<ResponseModel<List<BookModel>>> GetBooksByAuthorId(Guid idAuthor);
-        Task<ResponseModel<BookModel>> CreateBook(BookCreateDTO dto);
-        Task<ResponseModel<BookModel>> UpdateBook(Guid id, BookUpdateDTO dto);
-        Task<ResponseModel<BookModel>> DeleteBook(Guid id);
+        Task<ResponseModel<List<BookResponseDTO>>> GetBooks();
+        Task<ResponseModel<BookResponseDTO>> GetBookById(Guid idBook);
+        Task<ResponseModel<List<BookResponseDTO>>> GetBooksByAuthorId(Guid idAuthor);
+        Task<ResponseModel<BookResponseDTO>> CreateBook(BookCreateDTO dto);
+        Task<ResponseModel<BookResponseDTO>> UpdateBook(Guid id, BookUpdateDTO dto);
+        Task<ResponseModel<BookResponseDTO>> DeleteBook(Guid id);
     }
 }

@@ -12,19 +12,33 @@ namespace BookSystem.Services.Author {
             _context = context;
         }
 
-        public async Task<ResponseModel<AuthorModel>> GetAuthorByBookId(Guid idBook) {
-            var response = new ResponseModel<AuthorModel>();
+        public static AuthorResponseDTO AuthorToResponseDTO(AuthorModel author) {
+            var authorResponseDTO = new AuthorResponseDTO {
+                Id = author.Id,
+                FirstName = author.FirstName,
+                LastName = author.LastName,
+                CreatedAt = author.CreatedAt
+            };
+
+            return authorResponseDTO;
+        }
+
+        public async Task<ResponseModel<AuthorResponseDTO>> GetAuthorByBookId(Guid idBook) {
+            var response = new ResponseModel<AuthorResponseDTO>();
             try {
                 var author = await _context.Books
                                         .Where(b => b.Id == idBook)
                                         .Select(b => b.Author)
                                         .FirstOrDefaultAsync(a => a.IsActive);
 
-                response.Data = author;
                 if (author == null) {
                     response.Message = "No authors found!";
                     return response;
                 }
+
+                var authorResponse = AuthorToResponseDTO(author);
+
+                response.Data = authorResponse;
                 response.Message = "The author have been collected.";
 
                 return response;
@@ -35,18 +49,21 @@ namespace BookSystem.Services.Author {
             }
         }
 
-        public async Task<ResponseModel<AuthorModel>> GetAuthorById(Guid idAuthor) {
-            var response = new ResponseModel<AuthorModel>();
+        public async Task<ResponseModel<AuthorResponseDTO>> GetAuthorById(Guid idAuthor) {
+            var response = new ResponseModel<AuthorResponseDTO>();
             try {
                 var author = await _context.Authors
                     .Where(a => a.IsActive)
                     .FirstOrDefaultAsync(a => a.Id == idAuthor);
                 
-                response.Data = author;
                 if (author == null) {
                     response.Message = "No authors found!";
                     return response;
                 }
+
+                var authorResponse = AuthorToResponseDTO(author);
+
+                response.Data = authorResponse;
                 response.Message = "The author have been collected.";
 
                 return response;
@@ -57,12 +74,14 @@ namespace BookSystem.Services.Author {
             }
         }
 
-        public async Task<ResponseModel<List<AuthorModel>>> GetAuthors() {
-            var response = new ResponseModel<List<AuthorModel>>();
+        public async Task<ResponseModel<List<AuthorResponseDTO>>> GetAuthors() {
+            var response = new ResponseModel<List<AuthorResponseDTO>>();
             try {
                 var authors = await _context.Authors
                     .Where(a => a.IsActive)
+                    .Select(a => AuthorToResponseDTO(a))
                     .ToListAsync();
+
                 response.Data = authors;
                 response.Message = "All authors have been collected.";
 
@@ -74,20 +93,25 @@ namespace BookSystem.Services.Author {
             }
         }
 
-        public async Task<ResponseModel<AuthorModel>> CreateAuthor(AuthorCreateDTO dto) {
-            var response = new ResponseModel<AuthorModel>();
+        public async Task<ResponseModel<AuthorResponseDTO>> CreateAuthor(AuthorCreateDTO dto) {
+            var response = new ResponseModel<AuthorResponseDTO>();
+
             try {
                 var author = new AuthorModel() {
                     FirstName = dto.FirstName,
                     LastName = dto.LastName
                 };
-                //var author = new AuthorModel(dto);
+
                 _context.Add(author);
                 await _context.SaveChangesAsync();
 
-                response.Data = await _context.Authors.FirstOrDefaultAsync(a => a.Id == author.Id);
+                var authorResponse = AuthorToResponseDTO(author);
+
+                response.Data = authorResponse;
+                    //await _context.Authors.FirstOrDefaultAsync(a => a.Id == author.Id);
                 response.Message = "Author created successfully!";
                 return response;
+
             } catch (Exception e) {
                 response.Message = e.Message;
                 response.Status = false;
@@ -95,8 +119,8 @@ namespace BookSystem.Services.Author {
             }
         }
 
-        public async Task<ResponseModel<AuthorModel>> UpdateAuthor(Guid id, AuthorUpdateDTO dto) {
-            var response = new ResponseModel<AuthorModel>();
+        public async Task<ResponseModel<AuthorResponseDTO>> UpdateAuthor(Guid id, AuthorUpdateDTO dto) {
+            var response = new ResponseModel<AuthorResponseDTO>();
             try {
                 var author = await _context.Authors
                     .Where(a => a.IsActive)
@@ -121,9 +145,13 @@ namespace BookSystem.Services.Author {
                 _context.Update(author);
                 await _context.SaveChangesAsync();
 
-                response.Data = await _context.Authors.FirstOrDefaultAsync(a => a.Id == id);
+                var authorResponse = AuthorToResponseDTO(author);
+
+                response.Data = authorResponse;
+                    //await _context.Authors.FirstOrDefaultAsync(a => a.Id == id);
                 response.Message = "Author updated successfully!";
                 return response;
+
             } catch (Exception e) {
                 response.Message = e.Message;
                 response.Status = false;
@@ -131,8 +159,9 @@ namespace BookSystem.Services.Author {
             }
         }
 
-        public async Task<ResponseModel<AuthorModel>> DeleteAuthor(Guid id) {
-            var response = new ResponseModel<AuthorModel>();
+        public async Task<ResponseModel<AuthorResponseDTO>> DeleteAuthor(Guid id) {
+            var response = new ResponseModel<AuthorResponseDTO>();
+
             try {
                 var author = await _context.Authors
                     .Where(a => a.IsActive)
@@ -143,11 +172,13 @@ namespace BookSystem.Services.Author {
                     return response;
                 }
 
+                var authorResponse = AuthorToResponseDTO(author);
+
                 author.IsActive = false;
                 _context.Update(author);
                 await _context.SaveChangesAsync();
 
-                response.Data = author;
+                response.Data = authorResponse;
                 response.Message = "Author deleted!";
                 return response;
 

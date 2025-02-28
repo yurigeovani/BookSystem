@@ -11,13 +11,43 @@ namespace BookSystem.Services.Book {
             _context = context;
         }
 
-        public async Task<ResponseModel<List<BookModel>>> GetBooks() {
-            var response = new ResponseModel<List<BookModel>>();
+        public static AuthorResponseDTO AuthorToResponseDTO(AuthorModel author) {
+            var authorResponseDTO = new AuthorResponseDTO {
+                Id = author.Id,
+                FirstName = author.FirstName,
+                LastName = author.LastName,
+                CreatedAt = author.CreatedAt
+            };
+
+            return authorResponseDTO;
+        }
+
+        public static BookResponseDTO BookToResponseDTO (BookModel book) {
+            var bookResponseDTO = new BookResponseDTO {
+                Id = book.Id,
+                Title = book.Title,
+                Genre = book.Genre,
+                Description = book.Description,
+                Author = AuthorToResponseDTO(book.Author)
+            };
+
+            return bookResponseDTO;
+        }
+
+        public async Task<ResponseModel<List<BookResponseDTO>>> GetBooks() {
+            var response = new ResponseModel<List<BookResponseDTO>>();
             try {
                 var books = await _context.Books
                     .Where(b => b.IsActive)
+                    .Include(b => b.Author)
+                    .Select(b => BookToResponseDTO(b))
                     .ToListAsync();
-                
+
+                if (!books.Any()) {
+                    response.Message = "No books found!";
+                    return response;
+                }
+
                 response.Data = books;
                 response.Message = "All books have been collected";
 
@@ -29,20 +59,27 @@ namespace BookSystem.Services.Book {
             }
         }
 
-        public async Task<ResponseModel<BookModel>> GetBookById(Guid idBook) {
-            var response = new ResponseModel<BookModel>();
+        public async Task<ResponseModel<BookResponseDTO>> GetBookById(Guid idBook) {
+            var response = new ResponseModel<BookResponseDTO>();
+
             try {
                 var book = await _context.Books
                     .Where(b => b.IsActive)
+                    .Include(b => b.Author)
                     .FirstOrDefaultAsync(b => b.Id == idBook);
 
-                response.Data = book;
+                //var author = await _context.Authors
+                //    .Where(a => a.IsActive)
+                //    .FirstOrDefaultAsync(a => a.Id == book.Author.Id);
 
                 if (book == null){
                     response.Message = "No book found!";
                     return response;
                 }
 
+                var bookResponse = BookToResponseDTO(book);
+
+                response.Data = bookResponse;
                 response.Message = "The book have been collected!";
 
                 return response;
@@ -53,17 +90,17 @@ namespace BookSystem.Services.Book {
             }
         }
 
-        public async Task<ResponseModel<List<BookModel>>> GetBooksByAuthorId(Guid idAuthor) {
-            var response = new ResponseModel<List<BookModel>>();
+        public async Task<ResponseModel<List<BookResponseDTO>>> GetBooksByAuthorId(Guid idAuthor) {
+            var response = new ResponseModel<List<BookResponseDTO>>();
 
             try {
-                //TOFIX
                 var books = await _context.Books
-                    .Where(b => b.IsActive)
-                    .Where(b => b.Author.Id == idAuthor)
+                    .Where(b => b.IsActive && b.Author.Id == idAuthor)
+                    .Include(b => b.Author)
+                    .Select(b => BookToResponseDTO(b))
                     .ToListAsync();
 
-                if (books == null) {
+                if (!books.Any()) {
                     response.Message = "No books found!";
                     return response;
                 }
@@ -79,8 +116,8 @@ namespace BookSystem.Services.Book {
             }
         }
 
-        public async Task<ResponseModel<BookModel>> CreateBook(BookCreateDTO dto) {
-            var response = new ResponseModel<BookModel>();
+        public async Task<ResponseModel<BookResponseDTO>> CreateBook(BookCreateDTO dto) {
+            var response = new ResponseModel<BookResponseDTO>();
 
             try {
                 var author = await _context.Authors
@@ -102,7 +139,9 @@ namespace BookSystem.Services.Book {
                 _context.Add(book);
                 await _context.SaveChangesAsync();
 
-                response.Data = book;
+                var newBook = BookToResponseDTO(book);
+
+                response.Data = newBook;
                 response.Message = "Book created";
 
                 return response;
@@ -113,17 +152,24 @@ namespace BookSystem.Services.Book {
             }
         }
 
-        public async Task<ResponseModel<BookModel>> UpdateBook(Guid id, BookUpdateDTO dto) {
-            var response = new ResponseModel<BookModel>();
+        public async Task<ResponseModel<BookResponseDTO>> UpdateBook(Guid id, BookUpdateDTO dto) {
+            var response = new ResponseModel<BookResponseDTO>();
 
             try {
                 var book = await _context.Books
-                                        .Where(b => b.IsActive)
-                                        .Where(b => b.Id == id)
-                                        .FirstOrDefaultAsync();
+                                        .Include(b => b.Author)
+                                        .FirstOrDefaultAsync(b => b.IsActive && b.Id == id);
                 if (book == null) {
                     response.Message = "No book found!";
                     return response;
+                }
+
+                if (string.IsNullOrEmpty(dto.Title) && string.IsNullOrEmpty(dto.Genre)
+                    && string.IsNullOrEmpty(dto.Description) && dto.idAuthor == Guid.Empty) {
+
+                    response.Message = "Nothing to update!";
+                    return response;
+
                 }
 
                 if (!string.IsNullOrEmpty(dto.Title))
@@ -134,8 +180,7 @@ namespace BookSystem.Services.Book {
                     book.Description = dto.Description;
                 if (dto.idAuthor != Guid.Empty) {
                     var author = await _context.Authors
-                                        .Where(a => a.Id == dto.idAuthor)
-                                        .FirstOrDefaultAsync();
+                                        .FirstOrDefaultAsync(a => a.Id == dto.idAuthor);
                     if (author == null) {
                         response.Message = "Author not found!";
                         return response;
@@ -146,8 +191,10 @@ namespace BookSystem.Services.Book {
                 _context.Update(book);
                 await _context.SaveChangesAsync();
 
+                var bookUpdated = BookToResponseDTO(book);
+
                 response.Message = "Book updated!";
-                response.Data = book;
+                response.Data = bookUpdated;
 
                 return response;
             } catch (Exception e) {
@@ -157,12 +204,13 @@ namespace BookSystem.Services.Book {
             }
         }
 
-        public async Task<ResponseModel<BookModel>> DeleteBook(Guid id) {
-            var response = new ResponseModel<BookModel>();
+        public async Task<ResponseModel<BookResponseDTO>> DeleteBook(Guid id) {
+            var response = new ResponseModel<BookResponseDTO>();
 
             try {
                 var book = await _context.Books
                     .Where(b => b.IsActive)
+                    .Include(b => b.Author)
                     .FirstOrDefaultAsync(b => b.Id == id);
 
                 if (book == null) {
@@ -172,11 +220,14 @@ namespace BookSystem.Services.Book {
 
                 book.IsActive = false;
 
+                var bookDeleted = BookToResponseDTO(book);
+
                 _context.Update(book);
                 await _context.SaveChangesAsync();
 
+
                 response.Message = "Book deleted";
-                response.Data = book;
+                response.Data = bookDeleted;
 
                 return response;
             } catch (Exception e) {
